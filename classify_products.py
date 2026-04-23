@@ -1,4 +1,9 @@
 import json
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from core.domain.platforms import PlatformRegistry
 
 def classify_products(input_file="amazon_products_local.json", output_file="amazon_classified.json"):
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -14,40 +19,14 @@ def classify_products(input_file="amazon_products_local.json", output_file="amaz
         "Outros": []
     }
     
+    registry = PlatformRegistry()
+    
     for p in products:
-        title = p.get("title", "").lower()
+        title = p.get("title", "")
+        category = registry.categorize(title)
         
-        # A ordem das condições importa: um volante para PS5 nunca deve cair na categoria "Consoles" 
-        # só porque tem a palavra "PS5" no título. Por isso isolamos as categorias específicas primeiro.
-        if any(x in title for x in ["volante", "pedais", "driving force", "g923", "g29"]):
-            category = "Volantes"
-            
-        elif any(x in title for x in ["headset", "fone", "áudio"]):
-            category = "Headsets & Áudio"
-            
-        elif any(x in title for x in ["cabo", "cable", "usb", "suporte", "base", "carregamento", "ssd", "unidade de disco", "vr2", "portal remote", "lcd"]):
-            category = "Acessórios & Hardware"
-            
-        # Puxamos atributos inconfundíveis de Console ANTES de Controle
-        # Usamos lógicas fechadas (como evitar "para consoles") para barrar "Controle para consoles Sony"
-        elif any(x in title for x in ["console ", "pacote ", "bundle", "edição digital", "digital edition", "disc edition", "disc console"]) and "para console" not in title:
-            category = "Consoles"
-            
-        elif "playstation 5 slim" in title or "playstation®5" in title or "playstation 5 pro" in title or "ps5 digital" in title:
-            category = "Consoles"
-            
-        elif any(x in title for x in ["controle", "dualsense", "controller", "mando", "joystick"]):
-            category = "Controles"
-            
-        elif any(x in title for x in ["jogo", "spider-man", "gran turismo", "ghost of", "resident evil", "pragmata", "mega man", "collection", "game"]):
-            category = "Jogos"
-            
-        elif any(x in title for x in ["playstation 5", "playstation®5", "ps5", "pro", "macbook", "notebook"]):
-            # Como a busca principal original do usuário inclui o console ou macbooks...
-            category = "Consoles"
-            
-        else:
-            category = "Outros"
+        if category not in classified:
+            classified[category] = []
             
         # O usuário pediu para limpar o JSON mantendo nome, link e fotografia no segmento
         classified[category].append({

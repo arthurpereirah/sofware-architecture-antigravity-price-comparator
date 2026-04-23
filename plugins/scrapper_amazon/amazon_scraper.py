@@ -24,12 +24,12 @@ def scrape_amazon_search(search_url):
 
     print(f"Buscando produtos na página: {search_url}")
     try:
-        time.sleep(random.uniform(1.0, 2.5))
+        time.sleep(5)
         response = requests.get(search_url, headers=headers)
         
         if response.status_code == 503:
             print(f"⚠️  Bloqueado pela Amazon (Erro 503 / CAPTCHA)")
-            return
+            return product_data
             
         response.raise_for_status()
 
@@ -95,10 +95,7 @@ def scrape_amazon_search(search_url):
     except Exception as e:
         print(f"Erro ao extrair a página de busca: {e}")
 
-    with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
-        json.dump(product_data, f, ensure_ascii=False, indent=4)
-        
-    print(f"\nFinalizado! Dados salvos em '{OUTPUT_JSON}'.")
+    return product_data
 
 
 def enrich_with_manufacturer_sku(limit=3):
@@ -192,9 +189,24 @@ def enrich_with_manufacturer_sku(limit=3):
         print("\nTodos os produtos do JSON já estão enriquecidos ou limite foi atingido.")
 
 if __name__ == "__main__":
-    termo_de_busca = "https://www.amazon.com.br/s?k=playstation+5"
-    print("Iniciando varredura da vitrine com todas as propriedades estendidas...")
-    scrape_amazon_search(termo_de_busca)
+    import sys
+    import os
+    # Garante a importação do core
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from core.domain.platforms import PlatformRegistry
+
+    registry = PlatformRegistry()
+    search_urls = registry.get_all_search_urls()
+    
+    print(f"Iniciando varredura da vitrine nas plataformas. {len(search_urls)} URLs pendentes...")
+    all_data = []
+    for url in search_urls:
+        data = scrape_amazon_search(url)
+        all_data.extend(data)
+        
+    with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
+        json.dump(all_data, f, ensure_ascii=False, indent=4)
+    print(f"\nFinalizado Total! {len(all_data)} produtos salvos em '{OUTPUT_JSON}'.")
     
     # Executa apenas nos próximos 3 produtos da lista que NÃO tem o 'manufacturer_sku'
     # enrich_with_manufacturer_sku(limit=3)

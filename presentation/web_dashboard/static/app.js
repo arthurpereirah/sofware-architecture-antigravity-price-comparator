@@ -89,6 +89,14 @@ function renderCard(stats, container) {
         <!-- Botao de Compra -->
         <a href="${stats.latest_url || '#'}" target="_blank" class="buy-button">Ir à Loja</a>
     `;
+    
+    const searchInput = document.getElementById('search-input');
+    if (searchInput && searchInput.value) {
+        if (!stats.variant.toLowerCase().includes(searchInput.value.toLowerCase())) {
+            card.style.display = 'none';
+        }
+    }
+    
     container.appendChild(card);
     
     renderChart(stats, `chart-${stats.variant.replace(/\W/g, '')}`);
@@ -141,4 +149,25 @@ function renderChart(stats, canvasId) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+    
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const titleElement = card.querySelector('.variant-title');
+                if (titleElement) {
+                    const title = titleElement.textContent.toLowerCase();
+                    if (title.includes(term)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+});

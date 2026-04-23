@@ -8,11 +8,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from plugins.scrapper_amazon.local_json_adapter import LocalJsonProductAdapter
 from core.application.use_cases import FindCheapestVariantsUseCase
 from plugins.storage_sqlite.sqlite_adapter import SQLiteStorageAdapter
+from plugins.scrapper_amazon.playwright_scraper import scrape_with_playwright
 
 def main():
     # Caminho do JSON base
     json_path = "amazon_classified.json"
     
+    # Atualiza a base de dados via navegação autônoma do Playwright (bypassa capctha)
+    try:
+        print("🚀 Lançando Crawler Playwright...")
+        scrape_with_playwright()
+    except Exception as e:
+        print(f"Aviso: Falha ao rodar o scraper playwright: {e}")
+        
     if not os.path.exists(json_path):
         print(f"Erro: O adapter está apontando para um banco que não existe: {json_path}")
         return
